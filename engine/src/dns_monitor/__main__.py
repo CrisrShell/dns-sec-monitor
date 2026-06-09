@@ -1,4 +1,21 @@
-# ─── ENTRY POINT ───────────────────────────────────────────────────────────────
+
+"""Entry point for `python -m dns_monitor`"""
+
+from __future__ import annotations
+
+import logging
+
+from dns_monitor.config import (
+    ENTROPY_LIMIT,
+    ES_HOST,
+    ES_INDEX,
+    LENGTH_LIMIT,
+    ZEEK_LOG,
+    ZSCORE_LIMIT,
+    CSV_OUT,
+)
+from dns_monitor.core.orchestrator import DNSEngine
+
 def _startup_banner() -> None:
     """Print a one-time startup banner. Uses print() for visual emphasis."""
     print("=" * 70)
