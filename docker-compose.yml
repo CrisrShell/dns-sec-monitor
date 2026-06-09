@@ -1,0 +1,105 @@
+# ════════════════════════════════════════════════════════════════════════════════
+# DNS Security Monitor — Full Stack Orchestration
+# ════════════════════════════════════════════════════════════════════════════════
+# Bring up:    docker compose up -d
+# View logs:   docker compose logs -f <service-name>
+# Tear down:   docker compose down
+# Full reset:  docker compose down -v   (also deletes data volumes)
+# ════════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ──── ELASTICSEARCH ─────────────────────────────────────────────────────────
+  # Stores DNS alert documents. The engine writes here, Kibana reads from here.
+  # Single-node configuration suitable for development. Production would use a
+  # multi-node cluster with TLS between nodes.
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.3
+    container_name: dns-elasticsearch
+    environment:
+      - discovery.type=single-node       # No cluster — one node is enough for dev
+      - xpack.security.enabled=false      # Disable auth in dev — simplifies setup
+      - xpack.security.http.ssl.enabled=false   # Plain HTTP (no TLS) in dev
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m   # Cap heap at 512MB — fits most laptops
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es-data:/usr/share/elasticsearch/data   # Persist data between restarts
+    ports:
+      - "9200:9200"   # Expose to host so you can curl it during debugging
+    networks:
+      - dns-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+
+  # ──── KIBANA ────────────────────────────────────────────────────────────────
+  # Web dashboard for Elasticsearch. Open at http://localhost:5601 once healthy.
+  # Connects to Elasticsearch using the service name "elasticsearch" thanks to
+  # Docker's built-in DNS resolution within the dns-net network.
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.3.3
+    container_name: dns-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - SERVER_HOST=0.0.0.0          # Listen on all interfaces (not just localhost)
+      - SERVER_NAME=dns-kibana
+      - XPACK_SECURITY_ENABLED=false # Match Elasticsearch dev config
+    ports:
+      - "5601:5601"   # Expose dashboard to your Windows browser
+    networks:
+      - dns-net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy   # Wait for ES to be healthy before starting
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+
+# ──── BIND9 ─────────────────────────────────────────────────────────────────
+  # Recursive DNS resolver. Listens on port 53. Forwards external queries to
+  # Cloudflare/Google. Inbound queries are sniffed by Zeek for analysis.
+  bind9:
+    image: ubuntu/bind9:9.18-22.04_beta
+    container_name: dns-bind9
+    environment:
+      - BIND9_USER=root          # Required by the official Ubuntu image
+      - TZ=Europe/London
+    ports:
+      - "53:53/udp"              # DNS uses UDP for queries
+      - "53:53/tcp"              # TCP fallback for large responses
+    volumes:
+      # Mount our config file read-only — Bind9 reads it on startup
+      - ./infra/bind9/named.conf.options:/etc/bind/named.conf.options:ro
+      # Mount a log volume so we can inspect queries later
+      - bind-logs:/var/log/bind
+    networks:
+      - dns-net
+    restart: unless-stopped      # Auto-restart on crash
+    healthcheck:
+      # Check Bind9 process is alive and configuration is valid
+      # named-checkconf is always present in any Bind9 image
+      test: ["CMD-SHELL", "named-checkconf || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+# ──── NETWORKS ────────────────────────────────────────────────────────────────
+networks:
+  dns-net:
+    driver: bridge
+
+# ──── VOLUMES ─────────────────────────────────────────────────────────────────
+volumes:
+  es-data:
+  bind-logs:
