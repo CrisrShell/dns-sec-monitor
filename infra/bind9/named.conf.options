@@ -1,0 +1,37 @@
+options {
+    directory "/var/cache/bind";
+
+    // Listen on all interfaces inside the container
+    listen-on { any; };
+    listen-on-v6 { any; };
+
+    // Allow queries from the Docker network only
+    allow-query { 172.16.0.0/12; 127.0.0.1; };
+
+    // Recursive resolution enabled — this resolver finds answers for clients
+    recursion yes;
+    allow-recursion { 172.16.0.0/12; 127.0.0.1; };
+
+    // NOTE: Replace these with your local DNS resolvers.
+    // Find them with: Get-DnsClientServerAddress -AddressFamily IPv4
+    // Common alternatives: 1.1.1.1 (Cloudflare), 8.8.8.8 (Google)
+    forwarders {
+        163.167.80.15;      // Replace with YOUR router/working DNS
+        140.97.4.12;        
+    };
+    forward only;      // Only forward, never try to resolve recursively ourselves           
+
+    // Logging — visible via docker logs
+    dnssec-validation no;
+};
+
+// Query logging — produces an audit trail of every DNS query received
+logging {
+    channel query_log {
+        file "/var/log/bind/query.log" versions 3 size 5m;
+        severity info;
+        print-time yes;
+        print-category yes;
+    };
+    category queries { query_log; };
+};
