@@ -1,7 +1,7 @@
 
 """ DNS event data model """
 
-from __future__ import annotation
+from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Optional
