@@ -65,7 +65,7 @@ services:
       retries: 15
       start_period: 60s
 
-# ──── BIND9 ─────────────────────────────────────────────────────────────────
+  # ──── BIND9 ─────────────────────────────────────────────────────────────────
   # Recursive DNS resolver. Listens on port 53. Forwards external queries to
   # Cloudflare/Google. Inbound queries are sniffed by Zeek for analysis.
   bind9:
@@ -94,6 +94,27 @@ services:
       retries: 5
       start_period: 15s
 
+  # ──── ZEEK ──────────────────────────────────────────────────────────────────
+  # Passive DNS sniffer. Shares Bind9's network namespace so it sees the same
+  # traffic — no port mirroring or host network access needed.
+  # Writes dns.log to the zeek-logs volume, which the engine reads from.
+  zeek:
+    image: zeek/zeek:latest
+    container_name: dns-zeek
+    network_mode: service:bind9       # Share Bind9's network namespace
+    cap_add:
+      - NET_RAW                       # Required to open raw sockets for sniffing
+      - NET_ADMIN                     # Required to set the interface to promiscuous mode 
+    depends_on:
+      bind9:
+        condition: service_healthy    # Bind9 must be up before Zeek sniffs
+    volumes:
+      - ./infra/zeek/node.cfg:/usr/local/zeek/etc/node.cfg:ro
+      - ./infra/zeek/local.zeek:/usr/local/zeek/share/zeek/site/local.zeek:ro
+      - zeek-logs:/usr/local/zeek/logs   # Engine reads from logs/current/
+    command: sh -c "zeekctl deploy && tail -F /usr/local/zeek/logs/current/dns.log"
+    restart: unless-stopped
+
 # ──── NETWORKS ────────────────────────────────────────────────────────────────
 networks:
   dns-net:
@@ -103,3 +124,4 @@ networks:
 volumes:
   es-data:
   bind-logs:
+  zeek-logs:
