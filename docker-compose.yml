@@ -111,8 +111,30 @@ services:
     volumes:
       - ./infra/zeek/node.cfg:/usr/local/zeek/etc/node.cfg:ro
       - ./infra/zeek/local.zeek:/usr/local/zeek/share/zeek/site/local.zeek:ro
-      - zeek-logs:/usr/local/zeek/logs   # Engine reads from logs/current/
+      - zeek-logs:/usr/local/zeek/spool   # Live logs are written here, not logs/
     command: sh -c "zeekctl deploy && tail -F /usr/local/zeek/logs/current/dns.log"
+    restart: unless-stopped
+  
+  # ──── ENGINE ────────────────────────────────────────────────────────────────
+  # The Python detection pipeline. Tails Zeek's dns.log (read-only) and ships
+  # alerts to Elasticsearch. May restart briefly at first boot until Zeek
+  # creates dns.log — self-heals via restart policy.
+  engine:
+    build: ./engine
+    container_name: dns-engine
+    environment:
+      - ZEEK_LOG=/logs/zeek/dns.log     # spool/zeek/dns.log, relative to the mount
+      - ES_HOST=http://elasticsearch:9200  # Plain HTTP in dev — matches ES config
+    volumes:
+      - zeek-logs:/logs:ro                 # Read-only — engine must never touch Zeek's logs
+      - engine-data:/data                  # CSV + HTML outputs persist here
+    networks:
+      - dns-net
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      zeek:
+        condition: service_started         # Zeek has no healthcheck — started is all we can ask
     restart: unless-stopped
 
 # ──── NETWORKS ────────────────────────────────────────────────────────────────
@@ -125,3 +147,4 @@ volumes:
   es-data:
   bind-logs:
   zeek-logs:
+  engine-data:
