@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-
 from dns_monitor.config import (
+    CSV_OUT,
     ENTROPY_LIMIT,
     ES_HOST,
     ES_INDEX,
     LENGTH_LIMIT,
     ZEEK_LOG,
     ZSCORE_LIMIT,
-    CSV_OUT,
 )
 from dns_monitor.core.orchestrator import DNSEngine
 
@@ -24,7 +23,8 @@ def _startup_banner() -> None:
     print(f"  CSV output  : {CSV_OUT}")
     print(f"  Elasticsearch: {ES_HOST}/{ES_INDEX}")
     print(
-        f"  Thresholds  : H > {ENTROPY_LIMIT} | Len > {LENGTH_LIMIT} | Z > {ZSCORE_LIMIT}"
+        f"  Thresholds  : H > {ENTROPY_LIMIT} | "
+        f"Len > {LENGTH_LIMIT} | Z > {ZSCORE_LIMIT}"
     )
     print("=" * 70)
 

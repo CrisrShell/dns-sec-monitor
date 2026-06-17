@@ -34,7 +34,8 @@ class AlertShipper:
         with open(HTML_OUT, "w") as f:
             f.write(
                 "<html><head><meta http-equiv='refresh' content='5'></head>"
-                "<body><h1>DNS Security Dashboard</h1><p>Monitoring...</p></body></html>"
+                "<body><h1>DNS Security Dashboard</h1>"
+                "<p>Monitoring...</p></body></html>"
             )
 
     def ship(self, record: DNSRecord) -> None:

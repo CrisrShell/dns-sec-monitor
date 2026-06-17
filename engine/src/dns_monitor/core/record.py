@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -11,7 +10,7 @@ class DNSRecord:
     """A single parsed DNS event with detection metadata."""
 
     timestamp: str
-    source_ip: Optional[str]
+    source_ip: str | None
     query_string: str
     rcode: str
     query_type: str = "A"

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Generator, Optional
+from collections.abc import Generator
 
 
 class LogReader:
@@ -15,7 +15,7 @@ class LogReader:
 
     def tail(self) -> Generator[str, None, None]:
         """Yield new log lines as they appear. Polls every 100ms."""
-        with open(self.path, "r") as f:
+        with open(self.path) as f:
             f.seek(0, 2)  # Jump to end of file
             while True:
                 line = f.readline()
@@ -24,7 +24,7 @@ class LogReader:
                 else:
                     time.sleep(0.1)
 
-    def parse_line(self, line: str) -> Optional[dict]:
+    def parse_line(self, line: str) -> dict | None:
         """Parse one JSON line. Returns None for malformed input (NFR4)."""
         try:
             return json.loads(line)

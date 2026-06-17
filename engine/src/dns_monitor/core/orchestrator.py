@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from dns_monitor.config import ZEEK_LOG
 from dns_monitor.core.record import DNSRecord
@@ -30,7 +30,7 @@ class DNSEngine:
                 continue  # NFR4 — silently skip malformed input
 
             record = DNSRecord(
-                timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                timestamp=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
                 source_ip=data.get("id.orig_h"),
                 query_string=data.get("query", "unknown"),
                 rcode=data.get("rcode_name", "NONE"),

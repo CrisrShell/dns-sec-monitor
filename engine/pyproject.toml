@@ -44,6 +44,9 @@ where = ["src"]
 [tool.setuptools.package-dir]
 "" = "src"
 
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "C4", "SIM"]
+
 [[tool.mypy.overrides]]
 module = ["pandas.*", "urllib3.*", "elasticsearch.*"]
 ignore_missing_imports = true
