@@ -1,4 +1,4 @@
-""" Statistical anomaly detection engine - applies 4 detection rules """
+"""Statistical anomaly detection engine - applies 4 detection rules"""
 
 from __future__ import annotations
 
@@ -73,4 +73,3 @@ class DetectionEngine:
             record.reason = " | ".join(reasons)
 
         return record
-

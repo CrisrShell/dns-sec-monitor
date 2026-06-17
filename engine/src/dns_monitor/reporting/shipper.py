@@ -64,4 +64,3 @@ class AlertShipper:
             logger.info("ELK indexed: %s", res["result"])
         except Exception as e:
             logger.error("ELK indexing failed: %s", e)
-

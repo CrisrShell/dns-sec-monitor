@@ -1,5 +1,4 @@
-
-""" DNS event data model """
+"""DNS event data model"""
 
 from __future__ import annotations
 

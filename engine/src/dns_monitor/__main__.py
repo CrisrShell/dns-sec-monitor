@@ -1,9 +1,7 @@
-
 """Entry point for `python -m dns_monitor`"""
 
 from __future__ import annotations
 
-import logging
 
 from dns_monitor.config import (
     ENTROPY_LIMIT,
@@ -16,6 +14,7 @@ from dns_monitor.config import (
 )
 from dns_monitor.core.orchestrator import DNSEngine
 
+
 def _startup_banner() -> None:
     """Print a one-time startup banner. Uses print() for visual emphasis."""
     print("=" * 70)
@@ -24,7 +23,9 @@ def _startup_banner() -> None:
     print(f"  Zeek log    : {ZEEK_LOG}")
     print(f"  CSV output  : {CSV_OUT}")
     print(f"  Elasticsearch: {ES_HOST}/{ES_INDEX}")
-    print(f"  Thresholds  : H > {ENTROPY_LIMIT} | Len > {LENGTH_LIMIT} | Z > {ZSCORE_LIMIT}")
+    print(
+        f"  Thresholds  : H > {ENTROPY_LIMIT} | Len > {LENGTH_LIMIT} | Z > {ZSCORE_LIMIT}"
+    )
     print("=" * 70)
 
 
@@ -34,4 +35,4 @@ if __name__ == "__main__":
     try:
         engine.run()
     except KeyboardInterrupt:
-        logger.info("Engine stopped by user.")
+        print("Engine stopped by user.")

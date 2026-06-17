@@ -1,4 +1,3 @@
-
 """Top-level orchestrator — coordinates ingestion, detection, and reporting."""
 
 from __future__ import annotations
@@ -43,4 +42,3 @@ class DNSEngine:
             if record.alert_flag:
                 logger.warning("[!!] %s → %s", record.reason, record.query_string)
                 self._shipper.ship(record)
-
