@@ -43,3 +43,7 @@ where = ["src"]
 
 [tool.setuptools.package-dir]
 "" = "src"
+
+[[tool.mypy.overrides]]
+module = ["pandas.*", "urllib3.*", "elasticsearch.*"]
+ignore_missing_imports = true
