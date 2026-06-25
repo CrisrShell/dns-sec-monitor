@@ -1,0 +1,50 @@
+# Name shown in GitHub's "Actions" tab
+name: CI
+
+# WHEN to run: on every push and every pull request to main
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    # The fresh cloud machine to run on
+    runs-on: ubuntu-latest
+
+    # All commands run from the engine/ folder (where the code + config live)
+    defaults:
+      run:
+        working-directory: engine
+
+    steps:
+      # 1. Copy your repo onto the cloud machine
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      # 2. Install Python 3.12 (matches your project target)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 3. Install your package + all dev tools (ruff, mypy, pytest, pytest-cov)
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      # 4. Lint — fails the build if ruff finds issues
+      - name: Ruff lint
+        run: ruff check .
+
+      # 5. Format check — fails if code isn't formatted (note: --check, no edits)
+      - name: Ruff format check
+        run: ruff format --check .
+
+      # 6. Type check
+      - name: Mypy
+        run: mypy src
+
+      # 7. Tests with coverage
+      - name: Pytest
+        run: pytest --cov=dns_monitor
