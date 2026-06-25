@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import math
-
+from dns_monitor.core.record import DNSRecord
 from dns_monitor.detection.engine import DetectionEngine
-
-from dns_monitor.core.record import DNSRecord 
 
 
 def test_entropy_of_empty_string_is_zero():
@@ -36,6 +33,7 @@ def test_tunnelling_string_has_high_entropy():
     suspicious = "j5h9g3f7d1s8a2k6l0z4x8c2v6b0n4m8"
     # We don't care about the exact number, only that it crosses the alert line
     assert engine.calculate_entropy(suspicious) > 4.0
+
 
 def _make_record(query: str, rcode: str = "NOERROR") -> DNSRecord:
     """Helper — build a DNSRecord with the fields analyse() needs."""
@@ -88,7 +86,7 @@ def test_zscore_flags_repeated_query_as_spike():
     for i in range(20):
         engine.update_history(f"unique-domain-{i}.com")  # 20 distinct, count 1 each
     for _ in range(20):
-        engine.update_history("flood.example.com")        # 1 domain, count 20
+        engine.update_history("flood.example.com")  # 1 domain, count 20
     z = engine.calculate_zscore("flood.example.com")
     assert z > 3.0  # ZSCORE_LIMIT — this query would trip the FreqSpike rule
 

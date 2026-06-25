@@ -1,4 +1,5 @@
 """Tests for LogReader — focuses on parse_line (good input vs malformed)."""
+
 from __future__ import annotations
 
 from dns_monitor.ingestion.log_reader import LogReader
