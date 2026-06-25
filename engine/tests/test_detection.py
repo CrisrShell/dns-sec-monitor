@@ -71,3 +71,53 @@ def test_high_entropy_query_flags_and_scores():
     assert record.alert_flag is True
     assert "HighEntropy" in record.reason
     assert record.entropy_score > 4.0
+
+
+def test_zscore_below_min_history_is_zero():
+    # MIN_HISTORY is 10 — with fewer entries, z-score returns 0.0 (the guard)
+    engine = DetectionEngine()
+    for _ in range(5):  # only 5 < 10
+        engine.update_history("google.com")
+    assert engine.calculate_zscore("google.com") == 0.0
+
+
+def test_zscore_flags_repeated_query_as_spike():
+    # Build a window where one domain dominates a field of varied others.
+    # That domain's frequency should sit far above the mean → high z-score.
+    engine = DetectionEngine()
+    for i in range(20):
+        engine.update_history(f"unique-domain-{i}.com")  # 20 distinct, count 1 each
+    for _ in range(20):
+        engine.update_history("flood.example.com")        # 1 domain, count 20
+    z = engine.calculate_zscore("flood.example.com")
+    assert z > 3.0  # ZSCORE_LIMIT — this query would trip the FreqSpike rule
+
+
+def test_zscore_uniform_history_is_low():
+    # If every domain appears equally often, none is a spike → z near zero.
+    engine = DetectionEngine()
+    for i in range(15):
+        engine.update_history(f"domain-{i}.com")  # all distinct, all count 1
+    z = engine.calculate_zscore("domain-0.com")
+    assert z < 3.0
+
+
+def test_large_query_flags_as_large():
+    # A query over LENGTH_LIMIT (50) trips LargeQuery.
+    # All-"a" → entropy 0, so ONLY the length rule fires (isolates the branch).
+    engine = DetectionEngine()
+    record = engine.analyse(_make_record("a" * 60))
+    assert record.alert_flag is True
+    assert "LargeQuery" in record.reason
+
+
+def test_freq_spike_flags_repeated_query():
+    # Build a window where one domain dominates, then analyse it —
+    # the z-score should cross ZSCORE_LIMIT (3.0) and trip FreqSpike.
+    engine = DetectionEngine()
+    for i in range(20):
+        engine.update_history(f"unique-{i}.com")
+    for _ in range(20):
+        engine.update_history("flood.example.com")
+    record = engine.analyse(_make_record("flood.example.com"))
+    assert "FreqSpike" in record.reason
