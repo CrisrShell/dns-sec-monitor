@@ -137,6 +137,22 @@ services:
         condition: service_started         # Zeek has no healthcheck — started is all we can ask
     restart: unless-stopped
 
+# ──── PROMETHEUS ────────────────────────────────────────────────────────────
+  # Scrapes the engine's /metrics endpoint every 15s and stores time-series data.
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dns-prometheus
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"          # Prometheus web UI, reachable from your browser
+    networks:
+      - dns-net
+    depends_on:
+      - engine
+    restart: unless-stopped
+
 # ──── NETWORKS ────────────────────────────────────────────────────────────────
 networks:
   dns-net:
@@ -148,3 +164,4 @@ volumes:
   bind-logs:
   zeek-logs:
   engine-data:
+  prometheus-data:

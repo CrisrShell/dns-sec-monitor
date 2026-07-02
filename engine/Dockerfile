@@ -17,7 +17,7 @@ WORKDIR /build
 COPY pyproject.toml ./
 
 # Install dependencies into an isolated path we can copy to stage 2
-RUN pip install --no-cache-dir --prefix=/install pandas elasticsearch
+RUN pip install --no-cache-dir --prefix=/install pandas elasticsearch prometheus-client
 
 # ─── STAGE 2: RUNTIME ─────────────────────────────────────────────────────────
 # Lean image — only Python runtime, no build tools.
@@ -54,6 +54,9 @@ ENV ZEEK_LOG=/logs/dns.log \
 # Create data directory and give ownership to non-root user
 RUN mkdir -p /data /logs && \
     chown -R dnsmonitor:dnsmonitor /data /logs
+
+# Expose the Prometheus metrics port
+EXPOSE 9100
 
 # Switch to non-root user — security best practice
 USER dnsmonitor
