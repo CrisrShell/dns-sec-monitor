@@ -153,6 +153,21 @@ services:
       - engine
     restart: unless-stopped
 
+# ──── GRAFANA ───────────────────────────────────────────────────────────────
+  # Dashboards over Prometheus data. Web UI at http://localhost:3000
+  grafana:
+    image: grafana/grafana:latest
+    container_name: dns-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana   # Persist dashboards + settings
+    networks:
+      - dns-net
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 # ──── NETWORKS ────────────────────────────────────────────────────────────────
 networks:
   dns-net:
@@ -165,3 +180,4 @@ volumes:
   zeek-logs:
   engine-data:
   prometheus-data:
+  grafana-data:
