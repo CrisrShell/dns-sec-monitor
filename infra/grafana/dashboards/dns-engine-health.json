@@ -64,7 +64,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "cfrip2mi0e9kwa"
+                        "name": "prometheus"
                       },
                       "spec": {
                         "editorMode": "code",
@@ -184,7 +184,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "cfrip2mi0e9kwa"
+                        "name": "prometheus"
                       },
                       "spec": {
                         "editorMode": "code",
