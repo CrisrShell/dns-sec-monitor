@@ -1,0 +1,8 @@
+# Floci — local AWS emulator for Terraform development.
+# Separate from the main stack: this is a dev tool, not a project component.
+services:
+  floci:
+    image: floci/floci:latest
+    container_name: dns-floci
+    ports:
+      - "4566:4566"
