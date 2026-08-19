@@ -6,3 +6,7 @@ services:
     container_name: dns-floci
     ports:
       - "4566:4566"
+    volumes:
+      # Floci launches real containers to emulate EC2 instances, so it needs
+      # access to the host's Docker daemon.
+      - /var/run/docker.sock:/var/run/docker.sock
