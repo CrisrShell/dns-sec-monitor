@@ -13,7 +13,7 @@ terraform {
 # dev settings below, and use real credentials. The resources stay IDENTICAL.
 provider "aws" {
   region     = "us-east-1"
-  access_key = "test"   # Floci accepts any non-empty value
+  access_key = "test" # Floci accepts any non-empty value
   secret_key = "test"
 
   # Dev-only: don't validate against real AWS
@@ -26,14 +26,14 @@ provider "aws" {
   s3_use_path_style = true
 
   endpoints {
-    s3 = "http://localhost:4566"
+    s3  = "http://localhost:4566"
     ec2 = "http://localhost:4566"
   }
 }
 
-# ─── RESOURCES ────────────────────────────────────────────────────────────────
-# First resource: an S3 bucket (cloud file storage).
-# Trivial on purpose — today is about the workflow, not the resource.
+# ─── STORAGE ──────────────────────────────────────────────────────────────────
+# First resource created in this project. Kept as a place to store artefacts
+# (reports, exported dashboards) later.
 resource "aws_s3_bucket" "artifacts" {
   bucket = "dns-monitor-artifacts"
 }
@@ -105,7 +105,7 @@ resource "aws_security_group" "monitor" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # NOTE: tighten to your own IP on real AWS
+    cidr_blocks = ["0.0.0.0/0"] # NOTE: tighten to your own IP on real AWS
   }
 
   # DNS — the whole point of the project
@@ -123,14 +123,14 @@ resource "aws_security_group" "monitor" {
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # NOTE: tighten on real AWS
+    cidr_blocks = ["0.0.0.0/0"] # NOTE: tighten on real AWS
   }
 
   # Outbound: allow everything (the machine needs to fetch Docker images etc.)
   egress {
     from_port   = 0
     to_port     = 0
-    protocol    = "-1"          # -1 means "any protocol"
+    protocol    = "-1" # -1 means "any protocol"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -142,10 +142,16 @@ resource "aws_security_group" "monitor" {
 # ─── THE MACHINE ──────────────────────────────────────────────────────────────
 # The virtual computer that will run the docker-compose stack.
 resource "aws_instance" "monitor" {
-  ami                    = "ami-0c02fb55956c7d316"  # Amazon Linux 2 (us-east-1)
-  instance_type          = "t2.micro"               # Free Tier eligible
+  ami                    = "ami-0c02fb55956c7d316" # Amazon Linux 2 (us-east-1)
+  instance_type          = "t2.micro"              # Free Tier eligible
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.monitor.id]
+
+  # Startup script — runs on first boot via cloud-init. The machine configures
+  # itself, so a rebuilt instance is identical without any manual setup.
+  # NOTE: Floci stores user_data but cannot execute it — its emulated instances
+  # are plain containers with no cloud-init. Verified only on real AWS.
+  user_data = file("${path.module}/user_data.sh")
 
   tags = {
     Name = "dns-monitor-host"
