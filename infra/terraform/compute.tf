@@ -5,16 +5,16 @@ resource "aws_security_group" "monitor" {
   description = "Access rules for the DNS monitor host"
   vpc_id      = aws_vpc.main.id
 
-  # SSH — so you can log in and manage the machine
+  # SSH — restricted to my current IP only
   ingress {
     description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # NOTE: tighten to your own IP on real AWS
+    cidr_blocks = [var.my_ip]
   }
 
-  # DNS — the whole point of the project
+  # DNS — the whole point of the project, open to anyone who wants to test it
   ingress {
     description = "DNS (UDP)"
     from_port   = 53
@@ -23,13 +23,13 @@ resource "aws_security_group" "monitor" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Grafana dashboard
+  # Grafana dashboard — restricted to my current IP only
   ingress {
     description = "Grafana"
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # NOTE: tighten on real AWS
+    cidr_blocks = [var.my_ip]
   }
 
   # Outbound: allow everything (the machine needs to fetch Docker images etc.)
@@ -48,10 +48,20 @@ resource "aws_security_group" "monitor" {
 # ─── THE MACHINE ──────────────────────────────────────────────────────────────
 # The virtual computer that will run the docker-compose stack.
 resource "aws_instance" "monitor" {
-  ami                    = "ami-0c02fb55956c7d316" # Amazon Linux 2 (us-east-1)
-  instance_type          = "t2.micro"              # Free Tier eligible
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.monitor.id]
+  ami                         = "ami-081b0a6eac00b4f53" # Amazon Linux 2023
+  instance_type               = "t3.micro"
+  subnet_id                   = aws_subnet.public.id
+  vpc_security_group_ids      = [aws_security_group.monitor.id]
+  key_name                    = "dns-monitor-key"
+  associate_public_ip_address = true
+
+  # The default 8 GB root volume is too small: 4 GB goes to swap, and the
+  # seven container images plus the engine build need ~6 GB more.
+  # 30 GB is the Free Tier EBS allowance, so this costs nothing.
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
 
   # Startup script — runs on first boot via cloud-init. The machine configures
   # itself, so a rebuilt instance is identical without any manual setup.
