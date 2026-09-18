@@ -1,10 +1,23 @@
 # DNS Security Monitor
 
-![CI](https://github.com/CrisrShell/dns-sec-monitor/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/CrisrShell/dns-sec-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/CrisrShell/dns-sec-monitor/actions)
 
 Real-time DNS tunnelling detection using Shannon entropy and statistical analysis — containerised, tested, observable, and deployable to AWS as code.
 
 ---
+
+## What it is
+
+A real-time DNS monitoring pipeline that passively inspects DNS traffic and flags statistical signs of tunnelling — without decrypting payloads or relying on signature databases. Built for **network security analysts, SOC/NOC operators, and sysadmins** who want visibility into DNS as an attack surface, and as a reference architecture for anyone learning detection engineering, observability, or infrastructure-as-code.
+
+**What it does:**
+- Passively captures every DNS query on the network (no agents, no endpoint software)
+- Scores each query against four statistical rules in real time
+- Ships alerts to a searchable index and a live dashboard
+- Exposes its own health metrics, so "is it working" is never a guess
+- Deploys identically to a laptop or to AWS, defined entirely as code
+
+> This is a portfolio-grade reference implementation of real detection engineering — not a hardened production tool. Kibana and Grafana have no authentication by default, Elasticsearch runs single-node, and TLS isn't configured anywhere. Treat it as a learning platform and architecture reference, not a drop-in SOC product.
 
 ## The problem
 
@@ -51,15 +64,24 @@ cd dns-sec-monitor
 docker compose up -d
 ```
 
-Wait ~60 seconds for all services to report healthy, then trigger a query:
+Wait ~60 seconds for all services to report healthy, then trigger a query.
 
+**Linux/macOS:**
 ```bash
 # Any query wakes the engine on first start
-nslookup google.com 127.0.0.1
+dig @127.0.0.1 google.com
 
 # A long, random query triggers the entropy rule
-nslookup k4m8p2w6z0x9c3v7b1nqasdfgh.google.com 127.0.0.1
+dig @127.0.0.1 k4m8p2w6z0x9c3v7b1nqasdfgh.google.com
 ```
+
+**Windows (PowerShell):**
+```powershell
+Resolve-DnsName google.com -Server 127.0.0.1
+Resolve-DnsName "k4m8p2w6z0x9c3v7b1nqasdfgh.google.com" -Server 127.0.0.1
+```
+
+(`nslookup` also works on any platform if you prefer it — `dig` is used here since it's the standard tool network engineers reach for on Linux/Unix.)
 
 - **Kibana** (alerts): http://localhost:5601
 - **Grafana** (engine health): http://localhost:3000
